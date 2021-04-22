@@ -11,18 +11,20 @@ const displayPlanner = function () {
     const savedPlans = loadPlans();
 
     for (let hour = startTime; hour <= endTime; hour++) {
-
-        createTimeBlockEl(hour);
-        $("#" + hour).find("textarea").val(savedPlans[hour]);
+        createTimeBlockEl(hour, savedPlans[hour]);
     }
 };
 
-const createTimeBlockEl = function (hour) {
+const createTimeBlockEl = function (hour, text) {
     const template = $($("#hour-block-template").html());
 
+    //div class time-block will have an id of hour
     template.attr("id", hour);
 
+    //populate hour and description fields
     template.find(".hour").text(moment({ hour }).format("hA"));
+    template.find("textarea").val(text);
+
     $("#workday").append(template);
 }
 
@@ -40,18 +42,54 @@ const loadPlans = function () {
     return savedPlans;
 };
 
+const colorCode = function () {
+    //get the current hour
+    const currentHour = parseInt(moment().format("H"));
+    
+    //clear all description background colors
+    $(".description").removeClass("past present future");
+
+    $(".time-block").each(function () {
+
+        const currentTimeBlock = parseInt($(this).attr("id"));
+        const currentDescription = $(this).find(".description");
+
+        if (currentTimeBlock < currentHour) {
+            currentDescription.addClass("past");
+        }
+        else if (currentTimeBlock === currentHour) {
+            currentDescription.addClass("present");
+        }
+        else {
+            currentDescription.addClass("future");
+        }
+    });
+};
+
 displayDate();
 displayPlanner();
+colorCode();
 
-$(".saveBtn").on("click", function(event) {
+setInterval(function () {
+    colorCode();
+    displayDate();
+}, 1000 * 60);
+
+$(".saveBtn").on("click", function (event) {
+
+    //find the time-block element whose save button was clicked
     const timeBlockEl = $(event.target).parents(".time-block");
-    console.log(timeBlockEl);
+    //capture the hour and the description
     const hour = timeBlockEl.attr("id");
     const text = timeBlockEl.find("textarea").val();
 
+    //load plans
     const savedPlans = loadPlans();
 
+    //update plans
     savedPlans[hour] = text;
+
+    //save plans
     savePlans(savedPlans);
 });
 
